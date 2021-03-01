@@ -5,4 +5,4 @@ Practice problems in Scheme.
 - [Homework 0](Homework0.scm)
 - [Homework 1](Homework1.scm)
 
-###Practice
+### Practice
