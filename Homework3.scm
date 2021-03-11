@@ -154,6 +154,7 @@
       (* (term a) (product term (next a) next b))))
 
 (define (inc x) (+ x 1))
+(define (dec x) (- x 1))
 (define (identity x) x)
 
 (product identity 1 inc 3) ; returns 6
@@ -171,24 +172,123 @@
 ; INDUCTION STEP
 
 ; ------------ Iterative ------------
-; PRECONDITION: 
+; PRECONDITION: Given a range, a to b where a <= b and a, b are natural numbers
+;               Also given next and term functions whose outputs work for our product
+; POSTCONDITION: Return product of terms from a to b
 
+; Start with an example:
+; (a result-so-far) <-- term and next are already within scope, no need to rewrite
+; (1 1) <-- compute product of squares from 1 to 5
+; (2 1)
+; (3 4)
+; (4 36)
+; (5 576)
+; (6 14,400) <-- a > B, return result-so-far
+
+; Design Roles: What does each variable do?
+; a -> current term, in the beginning a = A, where A is the initial value of a
+; result-so-far -> product of terms so far in the range
+
+; How does this change per step?
+; On the next step...
+; a is incremented, check if a > b for termination case
+; result-so-far is the previous result times the current term of a
+
+; Guess Invariant: a = current number within range of A to B, where A is initial value
+; of a and B is initial value of B AND result-so-far = product of terms from A to a
+
+; TEST THE INVARIANT:
+; Strong Enough? - Last Call
+; On the last call, we have a = B + 1, but the result-so-far is the product of terms from
+; A to B. We know this because the way result-so-far gets updated is if the program does not
+; terminate and the next call involves having result-so-far multiplied by the term of the current
+; value of a. Since the program halts on the final call, we can assure ourselves that
+; result-so-far holds the terms from A to B, which is what we want. Thus, the GI holds.
+
+; Weak Enough? - First Call
+; On the first call, we have a = A + 1. We know result-so-far starts off as 1, but since the
+; program hasn't terminated, we can update result-so-far so that it is multiplied with the
+; term of the current value of a, which is A + 1. Currently, result-so-far contains the product
+; of terms from A to A + 1, which makes sense. Thus, the GI holds.
+
+; Preservability? - Current to Next Call
+; Let's say the kth call works, so when a = k, result-so-far is the product of terms from A to k.
+; On the k+1th call, a = k+1, and result-so-far is updated by being multipled with the term of
+; k+1. Now, result-so-far holds the product of terms from A to k+1, which makes sense. Thus, the
+; GI holds.
+
+; Termination - Eventually Stops?
+; Our termination case is when a > B, and our precondition ensures us that the value of a increases
+; after a call to the next function. Since a is increasing, eventually it will be greater than B,
+; which is held constant anyways. This program is confirmed to terminate.
+
+; Code
+(define (product2 term A next B)
+  (define (product-iter a result-so-far)
+    (if (> a B)
+        result-so-far
+        (product-iter (next a) (* (term a) result-so-far))))
+  (product-iter A 1))
+
+(product2 square 1 inc 5) ; 14400
+(product2 identity 1 inc 5) ; 120
+(product2 square 0 inc -1) ; 1
 
 ; Exercise 1.34
 
-(define (f g)
-  (g 2))
+; (define (f g)
+;   (g 2))
 
-(f f) ; On second call of f, you cannot do (2 2) because "2" is not a procedure
+; (f f) ; On second call of f, you cannot do (2 2) because "2" is not a procedure
 
 
 ; Exercise 1.37
+; Continued Fraction (Recursive and Iterative)
+; ---------- Recursive ----------
+(define (cont-frac n d k)
+  (define (cont-frac-with-count c)
+    (if (= c k)
+        (/ (n c) (d c))
+        (/ (n c) (+ (d c) (cont-frac-with-count (+ c 1))))))
+  (cont-frac-with-count 1))
 
+(cont-frac (lambda (i) 1.0)
+           (lambda (i) 1.0)
+           100000) ; 0.6180339887498948
+
+; ---------- Iterative ----------
+(define (cont-frac2 n d k)
+  (define (cont-frac-iter result count)
+    (if (= count k)
+        result
+        (cont-frac-iter (/ (n (- k count)) (+ (d (- k count)) result)) (+ count 1))))
+  (cont-frac-iter (/ (n k) (d k)) 1))
+
+(cont-frac2 (lambda (i) 1.0) 
+            (lambda (i) 1.0)
+            100000) ; 0.6180339887498948
 
 
 ; Exercise 1.41
+(define (double p)
+  (lambda (x) (p (p x))))
+
+((double inc) 5) ; 5 + 2 = 7
+(((double (double double)) inc) 5) ; 5 + 16 = 21
 
 ; Exercise 1.42
+(define (compose f g)
+  (lambda (x) (f (g x))))
+
+((compose square inc) 6) ; 49
+((compose dec cube) 2) ; 7
 
 ; Exercise 1.43
+(define (repeated f n)
+  (cond ((= n 0) identity)
+        (else (compose f (repeated f (dec n))))))
+
+((repeated square 2) 4) ; 256
+((repeated cube 3) 2) ; 134,217,728
+((repeated inc 0) 3) ; 3 
 
