@@ -11,3 +11,4 @@ Practice problems in Scheme.
 - [Practice Problem 1](PracticeProblem1.scm)
 - [Practice Problem 2](PracticeProblem2.scm)
 - [Practice Quiz 1](PracticeQuiz1.rkt)
+- [SpreadDigits](RecursiveSpreadDigits1Pass.rkt)
